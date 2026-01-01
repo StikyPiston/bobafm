@@ -143,16 +143,35 @@ func initialModel() model {
 
 func (m *model) refreshBrowse() {
 	entries, err := os.ReadDir(m.cwd)
-	if err!=nil { return }
-	items := []list.Item{}
-	parent := filepath.Dir(m.cwd)
-	if parent!=m.cwd { items = append(items,fileItem{name:"..", path:parent, isDir:true, isParent:true}) }
-	for _, e := range entries {
-		if !m.showHidden && e.Name()[0]=='.' { continue }
-		items = append(items,fileItem{name:e.Name(), path:filepath.Join(m.cwd,e.Name()), isDir:e.IsDir()})
+	if err != nil {
+		return
 	}
+
+	var dirs []list.Item
+	var files []list.Item
+
+	parent := filepath.Dir(m.cwd)
+	if parent != m.cwd {
+		dirs = append(dirs, fileItem{name: "..", path: parent, isDir: true, isParent: true})
+	}
+
+	for _, e := range entries {
+		if !m.showHidden && e.Name()[0] == '.' {
+			continue
+		}
+		item := fileItem{name: e.Name(), path: filepath.Join(m.cwd, e.Name()), isDir: e.IsDir()}
+		if e.IsDir() {
+			dirs = append(dirs, item)
+		} else {
+			files = append(files, item)
+		}
+	}
+
+	items := append(dirs, files...) // Directories first
 	title := fmt.Sprintf("bobafm — %s", m.cwd)
-	if m.showHidden { title+=" (hidden)" }
+	if m.showHidden {
+		title += " (hidden)"
+	}
 	m.browse.Title = title
 	m.browse.SetItems(items)
 }
